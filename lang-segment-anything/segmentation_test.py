@@ -12,11 +12,12 @@ model = LangSAM()
 # Images
 bear_folder = "../DAVIS/JPEGImages/480p/bear"
 bear_image_names = os.listdir(bear_folder)
+bear_image_names_first = bear_image_names[:1]  # Limit to first 100 images for testing
 
-bear_images = [Image.open(os.path.join(bear_folder, name)).convert("RGB") for name in bear_image_names]
+bear_images = [Image.open(os.path.join(bear_folder, name)).convert("RGB") for name in bear_image_names_first]
 print("Images loaded: ", len(bear_images))
 
-text_prompt = "bear."
+text_prompt = "bear. bush."
 
 results = []
 batch_size = 8  # Adjust batch size as needed
@@ -34,18 +35,22 @@ print("Number of results: ", len(results))
 print("Number of masks: ", len(results[0]["masks"]))
 
 # Generate binary masks for each image
-if not os.path.exists("./output_masks/bear"):
-    os.makedirs("./output_masks/bear")
+if not os.path.exists("./output_masks/bear_test"):
+    os.makedirs("./output_masks/bear_test")
 for i, result in enumerate(results):
     # print(f"Image {i}:")
     # print(f"  Number of masks: {len(result['masks'])}")
 
-    mask = results[i]["masks"][0]  # Get the first mask for each image
-    bw_bear_mask = np.where(mask > 0.5, 255, 0).astype(np.uint8)
+    masks = results[i]["masks"]  # Get the first mask for each image
+    print(f"Image {i} has {len(masks)} masks.")
+    for j, mask in enumerate(masks):
+        print(f"Mask {j}")
+        bw_bear_mask = np.where(mask > 0.5, 255, 0).astype(np.uint8)
 
-    bear_image = Image.fromarray(bw_bear_mask)
-    save_path = os.path.join("./output_masks/bear", f"bear_{i}.png")
-    bear_image.save(save_path)
+        bear_image = Image.fromarray(bw_bear_mask)
+        save_path = os.path.join("./output_masks/bear_test", f"bear_{i}_{j}.png")
+        bear_image.save(save_path)
+        print("Score for mask: ", results[i]["mask_scores"])
 
 
 end_time = time.time()
