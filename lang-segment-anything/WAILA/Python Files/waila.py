@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from lang_sam import LangSAM
 import json
 import itertools
+import argparse
 
 LIST_TEST_CATEGORIES = [
         "scooter-gray", "drift-chicane", "parkour", "paragliding-launch", "stroller",
@@ -96,7 +97,17 @@ def calculate_iou(mask1, mask2):
         return 0.0  # Avoid division by zero
     return intersection / union
 
-
+def parse_args():
+    """
+    Parse command line arguments.
+    """
+    parser = argparse.ArgumentParser(description="Run LangSAM on a set of categories.")
+    parser.add_argument("--n_terms", type=int, default=5, help="Number of similar terms to retrieve (default: 5)")
+    parser.add_argument("--n_samples", type=int, default=3, help="Number of frames to sample from the category (default: 3)")
+    parser.add_argument("--word_model", type=str, required=True, help="Path to the word model JSON file")
+    parser.add_argument("--root_output_folder", type=str, required=True, help="Root output folder for saving results")
+    
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
@@ -104,9 +115,17 @@ if __name__ == "__main__":
     ########################################################################################################################
     
     # VARIABLES TO EXPERIMENT WITH
-    n_terms = 5  # Number of similar terms to retrieve (Step 1)
-    n_samples = 3  # Number of frames to sample from the category (Step 2)
-    word_model = "w2v_similar_words.json"
+    args = parse_args()
+    n_terms = args.n_terms  # Number of similar terms to retrieve (Step 1)
+    n_samples = args.n_samples  # Number of frames to sample from the category (Step 2)
+    word_model = args.word_model  # Path to the word model JSON file (Step 0)
+    root_output_folder = args.root_output_folder  # Root output folder for saving results (Step 8)
+    os.makedirs(root_output_folder, exist_ok=True)  # Create the root output folder if it doesn't exist
+
+    print(f"Using {n_terms} similar terms and sampling {n_samples} frames per category.")
+    print(f"Word model file: {word_model}")
+    print(f"Output will be saved to: {root_output_folder}")
+    print("Starting processing...")
 
     ########################################################################################################################
 
@@ -169,8 +188,6 @@ if __name__ == "__main__":
             ########################################################################################################################
 
             # Step 4 (Save the first mask for each term)
-
-            root_output_folder = "./output_masks_test_1"
             category_output_folder = os.path.join(root_output_folder, category)
 
             sample_folder = os.path.join(category_output_folder, f"sample_{frames_to_sample[z]}")
@@ -323,3 +340,8 @@ if __name__ == "__main__":
 
     end_time = time.time()
     print(f"Time taken to prepare data: {end_time - start_time:.2f} seconds")
+
+    # Save runtime to a text file
+    runtime_file = os.path.join(root_output_folder, "runtime.txt")
+    with open(runtime_file, "w") as f:
+        f.write(f"Time taken to prepare data: {end_time - start_time:.2f} seconds\n")
